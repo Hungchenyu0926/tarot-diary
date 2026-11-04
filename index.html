@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>身心靈塔羅日記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#141228; --bg2:#1d1a38; --panel:#221f42; --line:#3a3566;
+  --text:#ece8f7; --muted:#a9a3c8; --gold:#d8b46a; --gold2:#f1d9a0; --rev:#e0897a;
+  --cw:64px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:radial-gradient(ellipse at top,#262150 0%,var(--bg) 60%) fixed;background-color:var(--bg);color:var(--text);
+  font:16px/1.75 "Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
+h1,h2,h3{font-family:"Noto Serif TC",serif;font-weight:600;line-height:1.3}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+header{text-align:center;padding:12px 0 4px}
+header h1{margin:0;font-size:1.7rem;color:var(--gold2);letter-spacing:.15em}
+header .date{color:var(--muted);font-size:.95rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:10px 0}
+button,select{font:inherit;font-size:.92rem;color:var(--text);background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:6px 14px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--gold)}
+button.primary{background:var(--gold);color:#1b1730;border-color:var(--gold);font-weight:500}
+button:disabled{opacity:.4;cursor:default}
+.status{text-align:center;color:var(--gold2);min-height:1.75em;margin:4px 0}
+
+/* 牌陣：身心靈 + 底牌 */
+.spread{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:16px;justify-content:center;align-items:end;max-width:720px;margin:8px auto 4px}
+.slot{text-align:center}
+.slot .lbl{font-family:"Noto Serif TC",serif;color:var(--gold2);font-size:1.05rem}
+.slot .lbl small{display:block;color:var(--muted);font-family:inherit;font-size:.75rem}
+.slot.bottom{padding-left:16px;border-left:1px dashed var(--line)}
+.place{width:clamp(78px,17vw,130px);aspect-ratio:350/600;margin:6px auto 0;border:1px dashed var(--line);border-radius:10px;perspective:800px}
+.slot.next .place{border-color:var(--gold);box-shadow:0 0 18px rgba(216,180,106,.35)}
+.flip{position:relative;width:100%;height:100%;transition:transform .8s;transform-style:preserve-3d}
+.flip.on{transform:rotateY(180deg)}
+.flip>div{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;overflow:hidden}
+.flip .front{transform:rotateY(180deg);background:#fff}
+.flip .front img{width:100%;height:100%;object-fit:cover;display:block}
+.flip .front.rev img{transform:rotate(180deg)}
+.slot .cname{font-size:.85rem;margin-top:4px;min-height:1.6em}
+.tag{display:inline-block;font-size:.72rem;border-radius:4px;padding:0 6px;margin-left:4px;border:1px solid var(--gold);color:var(--gold2)}
+.tag.rev{border-color:var(--rev);color:var(--rev)}
+
+/* 牌背 */
+.back{background:
+  radial-gradient(circle at 50% 50%,var(--gold) 0 7%,transparent 8% 22%,var(--gold) 23% 24%,transparent 25%),
+  repeating-conic-gradient(from 0deg at 50% 50%,#2c2766 0 15deg,#211d4d 15deg 30deg);
+  border:2px solid var(--gold);border-radius:inherit;box-shadow:inset 0 0 0 3px #1b1838}
+
+/* 78 張扇形牌陣 */
+.deck{position:relative;margin:18px auto 8px;user-select:none}
+.deck .card{position:absolute;width:var(--cw);aspect-ratio:350/600;border-radius:6px;cursor:pointer;
+  transform-origin:50% 120%;transition:transform .25s,opacity .4s,top .25s;box-shadow:-2px 2px 6px rgba(0,0,0,.45)}
+.deck .card:hover,.deck .card:focus-visible{outline:none;z-index:200!important;top:calc(var(--y) - 14px)!important}
+.deck .card.gone{opacity:0;pointer-events:none}
+.deck.locked .card{cursor:default}
+.deck.locked .card:hover{top:var(--y)!important}
+
+/* 解讀與日記 */
+.reading{display:none;max-width:780px;margin:24px auto 0}
+.reading.show{display:block}
+.pos{display:grid;grid-template-columns:96px 1fr;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
+.pos img{width:96px;border-radius:6px;display:block}
+.pos img.rev{transform:rotate(180deg)}
+.pos h3{margin:0 0 2px;font-size:1.15rem;color:var(--gold2)}
+.pos .kw{color:var(--muted);font-size:.9rem}
+.pos .say{margin:8px 0}
+details{margin:6px 0;border-top:1px solid var(--line);padding-top:6px}
+summary{cursor:pointer;color:var(--gold);font-size:.92rem}
+details table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:6px}
+details th,details td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+details th{color:var(--muted);font-weight:400;white-space:nowrap}
+details tr.hit td{background:rgba(216,180,106,.12)}
+textarea{width:100%;min-height:72px;font:inherit;font-size:.95rem;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
+textarea:focus{outline:none;border-color:var(--gold)}
+.note-lbl{font-size:.85rem;color:var(--muted);margin-top:8px}
+.guide{background:linear-gradient(180deg,#2a2552,var(--panel));border:1px solid var(--gold);border-radius:12px;padding:16px 20px}
+.guide h2{margin:0 0 8px;color:var(--gold2);font-size:1.25rem}
+.guide p{margin:.5em 0}
+.guide .focus{border-left:3px solid var(--gold);padding-left:12px;color:var(--gold2)}
+.foot{text-align:center;color:var(--muted);font-size:.78rem;margin:28px 0 12px}
+.foot a{color:var(--muted)}
+
+@media (max-width:640px){
+  .wrap{padding:12px 16px}
+  header h1{font-size:1.35rem}
+  .spread{grid-template-columns:repeat(3,1fr);gap:8px}
+  .slot.bottom{grid-column:1/-1;border-left:0;border-top:1px dashed var(--line);padding:8px 0 0}
+  .slot.bottom .place{width:72px}
+  .place{width:clamp(70px,26vw,110px)}
+  .pos{grid-template-columns:64px 1fr;gap:12px;padding:12px}
+  .pos img{width:64px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>身心靈塔羅日記</h1>
+    <div class="date" id="date"></div>
+  </header>
+
+  <div class="toolbar">
+    <button id="btnShuffle">重新洗牌</button>
+    <button id="btnBottom" class="primary" disabled>翻開底牌</button>
+    <select id="history" aria-label="歷史紀錄"></select>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="spread" id="spread"></div>
+  <div class="deck" id="deck" aria-label="78 張牌"></div>
+
+  <section class="reading" id="reading">
+    <div id="positions"></div>
+    <div class="guide" id="guide"></div>
+    <div class="pos" style="display:block">
+      <h3>今日心得</h3>
+      <textarea id="overall" placeholder="把三張牌和底牌放在一起看，今天想對自己說什麼？"></textarea>
+    </div>
+    <div class="toolbar">
+      <button id="btnExport" class="primary">存到 HUNG_NOTE 每日紀錄</button>
+      <button id="btnCopy">複製 Markdown</button>
+      <button id="btnRestart">今天重抽</button>
+    </div>
+    <div class="status" id="saveMsg"></div>
+  </section>
+
+  <div class="foot">牌面：Rider-Waite-Smith 1909 原版（Pamela Colman Smith，公有領域），掃描檔取自
+    <a href="https://github.com/metabismuth/tarot-json">metabismuth/tarot-json</a>（MIT）。<br>寫到一半的筆記會先暫存在這台裝置的瀏覽器裡；按「存到 HUNG_NOTE 每日紀錄」才會寫進知識庫。</div>
+</div>
+
+<script src="cards.js"></script>
+<script>
+const POS = [
+  {key:'body',   name:'身', hint:'身體・行動・日常'},
+  {key:'mind',   name:'心', hint:'情緒・想法・關係'},
+  {key:'spirit', name:'靈', hint:'成長・信念・課題'},
+];
+const BY_ID = Object.fromEntries(CARDS.map(c => [c.id, c]));
+const $ = id => document.getElementById(id);
+const today = new Date().toLocaleDateString('sv');   // 本地日期 YYYY-MM-DD
+
+// ---- 儲存（每天一筆，存在瀏覽器） ----
+const KEY = d => 'tarot:' + d;
+function load(d){ try{ return JSON.parse(localStorage.getItem(KEY(d))) }catch(e){ return null } }
+function save(){ try{ localStorage.setItem(KEY(state.date), JSON.stringify(state)) }catch(e){} }
+
+let state;
+function fresh(){
+  const ids = CARDS.map(c => c.id), r = new Uint32Array(ids.length * 2);
+  crypto.getRandomValues(r);
+  for (let i = ids.length - 1; i > 0; i--){ const j = r[i] % (i + 1); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  // 每張牌洗牌時就決定正逆位（各一半機率）
+  return {date: today, deck: ids.map((id, i) => ({id, rev: r[ids.length + i] % 2 === 1})),
+          picks: [], bottom: null, notes: {}};
+}
+
+// ---- 牌陣 ----
+function buildSpread(){
+  const slots = POS.map((p, i) => `<div class="slot" data-i="${i}"><div class="lbl">${p.name}<small>${p.hint}</small></div>
+    <div class="place"></div><div class="cname"></div></div>`).join('');
+  $('spread').innerHTML = slots + `<div class="slot bottom" data-i="3"><div class="lbl">底牌<small>潛在的課題</small></div>
+    <div class="place"></div><div class="cname"></div></div>`;
+}
+function fillSlot(i, pick, animate){
+  const slot = $('spread').querySelector(`.slot[data-i="${i}"]`), c = BY_ID[pick.id];
+  slot.querySelector('.place').innerHTML = `<div class="flip"><div class="back"></div>
+    <div class="front ${pick.rev ? 'rev' : ''}"><img src="cards/${c.id}.jpg" alt="${c.name}"></div></div>`;
+  slot.querySelector('.cname').innerHTML = `${c.name}<span class="tag ${pick.rev ? 'rev' : ''}">${pick.rev ? '逆' : '正'}</span>`;
+  const f = slot.querySelector('.flip');
+  animate ? requestAnimationFrame(() => requestAnimationFrame(() => f.classList.add('on'))) : f.classList.add('on');
+}
+
+function layoutDeck(){
+  const deck = $('deck'), W = deck.parentElement.clientWidth - 32;
+  const rows = W < 560 ? 3 : W < 900 ? 2 : 1;
+  const cw = W < 560 ? 40 : W < 900 ? 52 : 60, ch = cw * 600 / 350;
+  const per = Math.ceil(78 / rows), lift = rows === 1 ? 46 : 26, rowH = ch + lift * .5 + 22;
+  deck.style.width = W + 'px'; deck.style.height = (rows * rowH + 20) + 'px';
+  deck.style.setProperty('--cw', cw + 'px');
+  [...deck.children].forEach((el, i) => {
+    const row = Math.floor(i / per), k = i % per, n = Math.min(per, 78 - row * per);
+    const t = n > 1 ? k / (n - 1) : .5;                // 0..1 從左到右
+    const x = cw * .3 + t * (W - cw * 1.6), y = row * rowH + lift * 4 * (t - .5) ** 2 + 16;
+    el.style.left = x + 'px'; el.style.setProperty('--y', y + 'px'); el.style.top = y + 'px';
+    el.style.transform = `rotate(${(t - .5) * (rows === 1 ? 40 : 28)}deg)`;
+    el.style.zIndex = i;
+  });
+}
+function buildDeck(){
+  $('deck').innerHTML = state.deck.map((d, i) =>
+    `<div class="card back" tabindex="0" role="button" aria-label="第 ${i + 1} 張牌" data-i="${i}"></div>`).join('');
+  layoutDeck();
+}
+
+function taken(){ return new Set([...state.picks.map(p => p.id), state.bottom && state.bottom.id]) }
+function refresh(){
+  const n = state.picks.length, used = taken();
+  [...$('deck').children].forEach(el => el.classList.toggle('gone', used.has(state.deck[el.dataset.i].id)));
+  $('deck').classList.toggle('locked', n >= 3);
+  $('spread').querySelectorAll('.slot').forEach(s => s.classList.toggle('next',
+    n < 3 ? +s.dataset.i === n : !state.bottom && s.dataset.i === '3'));
+  $('deck').style.display = state.bottom ? 'none' : '';
+  $('btnShuffle').disabled = n > 0;
+  $('btnBottom').disabled = !(n === 3 && !state.bottom);
+  $('status').textContent = n < 3 ? `靜下心，從牌堆選第 ${n + 1} 張：「${POS[n].name}」（${POS[n].hint}）`
+    : !state.bottom ? '三張都選好了，翻開壓在最下面的底牌' : '今天的牌陣完成了，先寫下自己的解讀，再展開牌義對照';
+  $('btnShuffle').hidden = $('btnBottom').hidden = !!state.bottom;
+}
+
+function pick(i){
+  if (state.picks.length >= 3 || state.bottom) return;
+  const d = state.deck[i];
+  if (taken().has(d.id)) return;
+  state.picks.push(d); save();
+  fillSlot(state.picks.length - 1, d, true);
+  refresh();
+}
+function flipBottom(){
+  const used = taken();
+  for (let i = state.deck.length - 1; i >= 0; i--)          // 牌堆最下面、還沒被選走的那張
+    if (!used.has(state.deck[i].id)){ state.bottom = state.deck[i]; break; }
+  save(); fillSlot(3, state.bottom, true); refresh();
+  setTimeout(renderReading, 700);
+}
+
+// ---- 串聯解讀規則 ----
+const EL = {
+  '火': '行動與熱情', '水': '情感與直覺', '風': '思考與溝通', '土': '身體與現實',
+};
+const FRIEND = {'火風':1,'風火':1,'水土':1,'土水':1};
+const CLASH  = {'火水':1,'水火':1,'風土':1,'土風':1};
+function relate(a, b){
+  if (a === b) return `同屬${a}元素，彼此共振、力量加倍，也要留意${EL[a]}過了頭`;
+  const k = a + b;
+  if (FRIEND[k]) return `${a}與${b}互相助長，${EL[a]}能順勢帶動${EL[b]}`;
+  if (CLASH[k])  return `${a}與${b}彼此拉扯，${EL[a]}和${EL[b]}可能各說各話，需要先找到平衡點`;
+  if ((a + b).includes('火') && (a + b).includes('土')) return `火與土需要磨合，熱情要放進具體的步驟裡才會落地`;
+  return `風與水互相牽動，想法容易被情緒帶著走，先分清楚「我想的」和「我感覺的」`;
+}
+const posOf = i => `「${POS[i].name}」`;
+const ori = p => p.rev ? 'rev' : 'up';
+const isCourt = c => c.arcana === 'minor' && c.num > 10;
+
+function synth(picks, bottom){
+  const cs = picks.map(p => BY_ID[p.id]), out = [];
+  // 1. 大牌比重
+  const maj = cs.map((c, i) => c.arcana === 'major' ? i : -1).filter(i => i >= 0);
+  out.push([
+    '今天三張都是小牌，功課落在日常細節裡，從小地方調整就會有感。',
+    `唯一的大牌「${cs[maj[0]] && cs[maj[0]].name}」落在${maj.length && posOf(maj[0])}，是今天的主旋律，其他兩張都圍著它轉。`,
+    `出現兩張大牌（${maj.map(posOf).join('、')}），今天有比較深的人生課題在發酵，值得多花點時間感受。`,
+    '三張全是大牌，今天適合停下來，看看更大的方向，而不只是處理眼前的事。',
+  ][maj.length]);
+  // 2. 逆位
+  const rv = picks.map((p, i) => p.rev ? i : -1).filter(i => i >= 0);
+  out.push([
+    '三張都是正位，身心靈的能量大致順暢，可以放心往外走。',
+    `逆位落在${rv.length && posOf(rv[0])}，那裡是今天能量卡住、最需要溫柔照顧的地方。`,
+    `${rv.map(posOf).join('、')}兩處逆位，能量偏向內收，先處理卡住的部分，再求前進。`,
+    '三張都是逆位，今天的能量明顯向內，適合休息、整理、放慢，不必勉強自己衝刺。',
+  ][rv.length]);
+  // 3. 元素
+  const els = cs.map(c => c.element), cnt = {};
+  els.forEach(e => cnt[e] = (cnt[e] || 0) + 1);
+  const top = Object.keys(cnt).find(e => cnt[e] >= 2);
+  if (top) out.push(`${top}元素佔了 ${cnt[top]} 張，今天的重心在「${EL[top]}」。`);
+  const miss = Object.keys(EL).filter(e => !cnt[e]);
+  if (miss.length === 1) out.push(`缺少${miss[0]}元素，可以刻意補一點「${EL[miss[0]]}」，讓自己更完整。`);
+  const r1 = relate(els[0], els[1]), r2 = relate(els[1], els[2]);
+  out.push(r1 === r2 ? `身、心、靈之間：${r1}。` : `身與心：${r1}；心與靈：${r2}。`);
+  // 4. 數字進程（同為大牌或同為數字小牌時才比）
+  const nums = cs.map(c => isCourt(c) ? null : c.num);
+  if (nums.every(n => n !== null) && cs.every(c => c.arcana === cs[0].arcana)){
+    if (nums[0] < nums[1] && nums[1] < nums[2]) out.push('從身到靈，牌的數字一路往上，像是一步一步往前推進，今天的努力會累積。');
+    else if (nums[0] > nums[1] && nums[1] > nums[2]) out.push('從身到靈，牌的數字一路往下，提醒你回頭補足基礎，慢一點反而走得穩。');
+  }
+  const minorNums = cs.filter(c => c.arcana === 'minor' && !isCourt(c)).map(c => c.num);
+  const dup = minorNums.find((n, i) => minorNums.indexOf(n) !== i);
+  if (dup) out.push(`有兩張以上都是數字 ${dup}，同一個階段的功課正在不同層面同時出現。`);
+  const courts = cs.map((c, i) => isCourt(c) ? i : -1).filter(i => i >= 0);
+  if (courts.length) out.push(`宮廷牌${courts.map(i => `「${cs[i].name}」`).join('、')}代表一種角色：可能是身邊的某個人，也可能是今天你可以練習扮演的態度。`);
+  // 5. 底牌
+  let tail = '';
+  if (bottom){
+    const b = BY_ID[bottom.id], same = els.map((e, i) => e === b.element ? i : -1).filter(i => i >= 0);
+    tail = `底牌「${b.name}」（${bottom.rev ? '逆位' : '正位'}）藏在所有事情下面：${b[ori(bottom)].core}` +
+      (same.length ? `它和${same.map(posOf).join('、')}同屬${b.element}元素，正在呼應那裡的訊息。` : '');
+  }
+  // 6. 今天的焦點
+  const f = rv.length ? rv[0] : maj.length ? maj[0] : 0;
+  const focus = `今天先照顧好${posOf(f)}：${cs[f][ori(picks[f])][POS[f].key]}`;
+  return {paras: out, tail, focus};
+}
+
+// ---- 解讀畫面 ----
+function esc(s){ return String(s || '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])) }
+function cardBlock(p, label, field, noteKey){
+  const c = BY_ID[p.id], o = c[ori(p)];
+  const row = (k, name) => `<tr class="${(k === 'rev') === p.rev ? 'hit' : ''}"><th>${name}</th><td>${c[k].kw}</td>
+    <td>${c[k][field]}</td></tr>`;
+  return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
+    <div><h3>${label}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
+    <div class="kw">${c.en}・${c.element}元素</div>
+    <div class="note-lbl">先寫下你自己看到什麼（練習）</div>
+    <textarea data-note="${noteKey}" placeholder="畫面裡的人物、顏色、動作讓你想到什麼？">${esc(state.notes[noteKey])}</textarea>
+    <details><summary>看牌義（正位／逆位對照）</summary>
+      <p class="say">${o[field]}</p>
+      <table><tr><th></th><th>關鍵詞</th><th>${field === 'core' ? '整體意思' : label + '的解讀'}</th></tr>
+      ${row('up', '正位')}${row('rev', '逆位')}</table>
+    </details></div></div>`;
+}
+function renderReading(){
+  if (!state.bottom) return;
+  $('positions').innerHTML = state.picks.map((p, i) => cardBlock(p, POS[i].name, POS[i].key, POS[i].key)).join('')
+    + cardBlock(state.bottom, '底牌', 'core', 'bottom');
+  const s = synth(state.picks, state.bottom);
+  $('guide').innerHTML = `<details><summary style="font-size:1.1rem">今日身心靈整體指引（寫完自己的解讀再打開）</summary>
+    ${s.paras.map(p => `<p>${p}</p>`).join('')}<p>${s.tail}</p><p class="focus">${s.focus}</p></details>`;
+  $('overall').value = state.notes.overall || '';
+  $('reading').classList.add('show');
+}
+
+// ---- 匯出 Markdown（格式比照 HUNG_NOTE/30.每日紀錄） ----
+function isoWeek(d){
+  const t = new Date(d + 'T00:00:00'); t.setDate(t.getDate() + 3 - (t.getDay() + 6) % 7);
+  const w1 = new Date(t.getFullYear(), 0, 4);
+  return `${t.getFullYear()}-W${String(1 + Math.round(((t - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7)).padStart(2, '0')}`;
+}
+const label = p => BY_ID[p.id].name + (p.rev ? '（逆）' : '');
+const mdTitle = () => '塔羅練習：' + state.picks.map(label).join('・');
+const mdFile = () => `${state.date}-${mdTitle()}.md`;
+function markdown(){
+  const line = (name, p, field, note) => {
+    const c = BY_ID[p.id];
+    return `## ${name}：${c.name}（${p.rev ? '逆位' : '正位'}）\n\n- **關鍵詞**：${c[ori(p)].kw}\n- **牌義**：${c[ori(p)][field]}\n` +
+      `- 正位對照：${c.up.kw}｜${c.up[field]}\n- 逆位對照：${c.rev.kw}｜${c.rev[field]}\n- **我的解讀**：${state.notes[note] || ''}\n`;
+  };
+  const s = synth(state.picks, state.bottom), all = [...state.picks, state.bottom];
+  const names = ['身', '心', '靈', '底牌'];
+  const wd = '日一二三四五六'[new Date(state.date + 'T00:00:00').getDay()];
+  return `---\ntitle: "${mdTitle()}"\ndate: ${state.date}\nweek: ${isoWeek(state.date)}\ntype: 每日記錄\ntags:\n  - 每日記錄\n  - 塔羅牌\n  - 身心靈日記\n` +
+    `source: "身心靈塔羅日記"\ncards:\n${all.map((p, i) => `  - "${names[i]}：${label(p)}"`).join('\n')}\n---\n\n` +
+    `# ${state.date}（週${wd}）｜${mdTitle()}\n\n> 來自「身心靈塔羅日記」網頁\n\n---\n\n## 🃏 今日牌陣\n\n| 位置 | 牌 | 正逆 | 關鍵詞 |\n|---|---|---|---|\n` +
+    all.map((p, i) => `| ${names[i]} | ${BY_ID[p.id].name} | ${p.rev ? '逆位' : '正位'} | ${BY_ID[p.id][ori(p)].kw} |`).join('\n') + '\n\n---\n\n' +
+    state.picks.map((p, i) => line(POS[i].name, p, POS[i].key, POS[i].key)).join('\n') + '\n' +
+    line('底牌', state.bottom, 'core', 'bottom') +
+    `\n---\n\n## 🔮 今日整體指引\n\n${s.paras.join('\n\n')}\n\n${s.tail}\n\n> ${s.focus}\n\n## 📓 今日心得\n\n${state.notes.overall || ''}\n`;
+}
+
+// 電腦（Chrome／Edge）：第一次選「30.每日紀錄」資料夾，之後直接寫入；手機：分享到雲端硬碟；都不行就下載
+const idb = (mode, fn) => new Promise((ok, no) => {
+  const r = indexedDB.open('tarot', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv');
+  r.onsuccess = () => { const q = fn(r.result.transaction('kv', mode).objectStore('kv')); q.onsuccess = () => ok(q.result); q.onerror = no; };
+  r.onerror = no;
+});
+async function folder(){
+  let h = await idb('readonly', s => s.get('dir')).catch(() => null);
+  if (h && (await h.queryPermission({mode: 'readwrite'}) === 'granted' || await h.requestPermission({mode: 'readwrite'}) === 'granted')) return h;
+  alert('第一次使用：請在接下來的視窗選擇「G:\\我的雲端硬碟\\HUNG_NOTE\\30.每日紀錄」資料夾，之後就會自動存到那裡。');
+  h = await showDirectoryPicker({id: 'tarot-diary', mode: 'readwrite'});
+  await idb('readwrite', s => s.put(h, 'dir')).catch(() => {});
+  return h;
+}
+function flash(msg){ $('saveMsg').textContent = msg; }
+async function saveMd(){
+  const name = mdFile(), file = new File([markdown()], name, {type: 'text/markdown'});
+  try {
+    if (window.showDirectoryPicker){
+      const dir = await folder(), fh = await dir.getFileHandle(name, {create: true}), w = await fh.createWritable();
+      await w.write(file); await w.close();
+      state.saved = name; save();
+      return flash(`已存到「${dir.name}」：${name}`);
+    }
+    if (navigator.canShare && navigator.canShare({files: [file]})){
+      await navigator.share({files: [file], title: name});
+      return flash('請在分享選單選「雲端硬碟」→ HUNG_NOTE／30.每日紀錄');
+    }
+  } catch(e){ if (e.name === 'AbortError') return flash('已取消'); }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  flash(`已下載 ${name}，請移到 HUNG_NOTE／30.每日紀錄`);
+}
+async function copyMd(){
+  try { await navigator.clipboard.writeText(markdown()); $('btnCopy').textContent = '已複製 ✓'; }
+  catch(e){ $('btnCopy').textContent = '複製失敗，請改用匯出'; }
+  setTimeout(() => $('btnCopy').textContent = '複製 Markdown', 2000);
+}
+
+// ---- 歷史 ----
+function buildHistory(){
+  const days = [];
+  try { for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k.startsWith('tarot:')) days.push(k.slice(6)); } } catch(e){}
+  if (!days.includes(today)) days.push(today);
+  days.sort().reverse();
+  $('history').innerHTML = days.map(d => `<option value="${d}" ${d === state.date ? 'selected' : ''}>${d === today ? '今天 ' + d : d}</option>`).join('');
+}
+
+function start(s){
+  state = s;
+  $('date').textContent = state.date === today ? `今天 ${today}` : `回顧 ${state.date}`;
+  $('reading').classList.remove('show');
+  buildSpread(); buildDeck();
+  state.picks.forEach((p, i) => fillSlot(i, p, false));
+  if (state.bottom){ fillSlot(3, state.bottom, false); renderReading(); }
+  refresh(); buildHistory();
+}
+
+$('deck').addEventListener('click', e => { const el = e.target.closest('.card'); if (el) pick(+el.dataset.i); });
+$('deck').addEventListener('keydown', e => { const el = e.target.closest('.card');
+  if (el && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); pick(+el.dataset.i); } });
+$('btnShuffle').onclick = () => { start(fresh()); save(); };
+$('btnBottom').onclick = flipBottom;
+$('btnExport').onclick = saveMd;
+$('btnCopy').onclick = copyMd;
+$('btnRestart').onclick = () => {
+  if (confirm('確定要重抽今天的牌嗎？今天寫的筆記會被清空。')) { start(fresh()); save(); }
+};
+$('history').onchange = e => start(load(e.target.value) || fresh());
+document.addEventListener('input', e => {
+  const k = e.target.dataset.note || (e.target.id === 'overall' && 'overall');
+  if (k){ state.notes[k] = e.target.value; save(); }
+});
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layoutDeck, 120); });
+
+start(load(today) || fresh());
+</script>
+</body>
+</html>
