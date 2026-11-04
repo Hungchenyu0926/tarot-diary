@@ -252,7 +252,7 @@ function askBlock(pos){
   return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
     <div><h3>${pos.name}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
     <div class="kw">${pos.role}（${pos.q}）・${c.en}・${c.element}元素</div>${numHtml(c)}${bodyHtml(c)}
-    ${storyHtml(c)}
+    ${storyHtml(c)}${LENS}
     <textarea data-ask-note="${pos.key}" placeholder="${storyHint(c)}（放在「${pos.role}」的位置）">${esc(ask.notes[pos.key])}</textarea>
     <details><summary>看牌義（正位／逆位對照）</summary>
       <p class="say"><b>${ride(p)}</b>：${c[ori(p)][f]}</p>
@@ -264,11 +264,10 @@ function askSynth(){
   const {sky, man, earth} = ask.picks, S = BY_ID[sky.id], M = BY_ID[man.id], E = BY_ID[earth.id];
   const ts = tone(sky), te = tone(earth), out = [];
   // 天：基調
-  out.push(`<b>天（Why）</b>大環境是「${ride(sky)}」。${S[ori(sky)].core}` +
+  out.push(`<b>天（Why）</b>大環境是「${ride(sky)}」，這張牌落在${actText(S)}。${S[ori(sky)].core}` +
     [' 這是不可抗力的氣候：與其硬衝，不如調整開法、等待時機。', ' 氣候不好不壞，結果多半取決於你怎麼開。', ' 整體氣候對你有利，這件事有順風。'][ts + 1]);
   // 人：駕駛
   out.push(`<b>人（Who）</b>駕駛是「${ride(man)}」。${RANK[M.num]}${man.rev ? '逆位代表這份駕駛特質現在用過頭或卡住了，先穩住自己。' : ''}`);
-  out.push(`天與人：${relate(S.element, M.element)}。`);
   // 地：路程
   out.push(`<b>地（What）</b>眼前路況是「${ride(earth)}」。${stage(E.num)}，落在${SUIT_AREA[E.suit]}的層面。${E[ori(earth)].core}`);
   // 人體能量全息圖：人是鏡子，地是身體部位
@@ -286,7 +285,7 @@ function askSynth(){
   const rv = ASK_POS.filter(p => ask.picks[p.key].rev).map(p => `「${p.name}」`);
   if (rv.length) out.push(`逆位落在${rv.join('、')}，那是這件事目前卡住、需要特別留意的環節。`);
   const focus = `影響力是天 ＞ 人 ＞ 地：天改變不了，地是結果的呈現，你真正能調整的是方向盤。${M[ori(man)].mind}`;
-  return {paras: out, focus};
+  return {paras: out, rel: relLines(ASK_POS.map(p => [p.name, ask.picks[p.key]])), focus, ...closing(man)};   // 收尾看「人」：你能調整的方向盤
 }
 
 function askRender(){
@@ -295,7 +294,7 @@ function askRender(){
     ASK_POS.map(askBlock).join('');
   const s = askSynth();
   $('askGuide').innerHTML = `<details><summary style="font-size:1.1rem">天地人整體解牌（寫完自己的解讀再打開）</summary>
-    ${s.paras.map(p => `<p>${p}</p>`).join('')}<p class="focus">${s.focus}</p></details>`;
+    ${s.paras.map(p => `<p>${p}</p>`).join('')}${relHtml(s.rel)}<p class="focus">${s.focus}</p>${closeHtml(s)}</details>`;
   $('askOverall').value = ask.notes.overall || '';
   $('askReading').classList.add('show');
 }
@@ -313,7 +312,7 @@ function askMarkdown(){
     ASK_POS.map(p => { const k = ask.picks[p.key], c = BY_ID[k.id];
       return `## ${p.name}・${p.role}：${c.name}（${k.rev ? '逆位' : '正位'}）\n\n- **比喻**：${ride(k)}\n- **關鍵詞**：${c[ori(k)].kw}\n${numMd(c)}${bodyMd(c)}${storyMd(c)}- **牌義**：${c[ori(k)][p.field]}\n` +
         `- 正位對照：${RIDE[c.id][0]}｜${c.up.kw}\n- 逆位對照：${RIDE[c.id][1]}｜${c.rev.kw}\n- **我的解讀**：${ask.notes[p.key] || ''}\n`; }).join('\n') +
-    `\n---\n\n## 🔮 天地人整體解牌\n\n${s.paras.map(plain).join('\n\n')}\n\n> ${s.focus}\n\n## 📓 我的結論\n\n${ask.notes.overall || ''}\n`;
+    `\n---\n\n## 🔮 天地人整體解牌\n\n${s.paras.map(plain).join('\n\n')}${relMd(s.rel)}\n\n> ${s.focus}${closeMd(s)}\n\n## 📓 我的結論\n\n${ask.notes.overall || ''}\n`;
 }
 
 // ---- 事件 ----
@@ -335,9 +334,9 @@ $('modeAsk').addEventListener('input', e => {
 function setMode(m){
   if (busy) return;
   document.querySelectorAll('.modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
-  $('modeDiary').hidden = m !== 'diary'; $('modeAsk').hidden = m !== 'ask'; $('modeStudy').hidden = m !== 'study';
+  $('modeDiary').hidden = m !== 'diary'; $('modeAsk').hidden = m !== 'ask'; $('modeSpread').hidden = m !== 'spread'; $('modeStudy').hidden = m !== 'study';
   try { localStorage.setItem('mode', m); } catch(e){}
-  if (m === 'diary') layoutDeck(); else if (m === 'ask') askLayout();
+  if (m === 'diary') layoutDeck(); else if (m === 'ask') askLayout(); else if (m === 'spread' && window.spLayout) spLayout();   // spread.js 較晚載入
 }
 document.querySelectorAll('.modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 
