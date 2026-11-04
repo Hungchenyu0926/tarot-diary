@@ -1,6 +1,6 @@
 // ===== 78 張牌義練習模式 =====
 // 下拉選一張牌（或隨機），先看圖練習，再展開牌義。
-// 「我的筆記」來自 mynotes.js（由 data/build_mynotes.py 從 HUNG_NOTE 產生，只在本機，不上傳）。
+// 「我的筆記」來自 mynotes.js（由 data/build_mynotes.py 從 HUNG_NOTE 產生）。
 
 const SUIT_ZH = {wands: '權杖', cups: '聖杯', swords: '寶劍', pentacles: '錢幣'};
 let studyId = 'm00', studyRev = false;

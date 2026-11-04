@@ -1,6 +1,5 @@
 # 把 HUNG_NOTE「20.知識庫/塔羅牌義」的筆記轉成 ../mynotes.js，供「78 張牌義」模式顯示。
-# mynotes.js 是個人筆記，已列入 .gitignore，不會推上 GitHub。
-# 用法：python build_mynotes.py  （筆記更新後重跑一次即可）
+# 用法：python build_mynotes.py  （筆記更新後重跑一次，再推上 GitHub，線上版才會更新）
 import json, pathlib, re, sys
 
 SRC = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else r'G:\我的雲端硬碟\HUNG_NOTE\20.知識庫\塔羅牌義')
