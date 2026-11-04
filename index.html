@@ -157,7 +157,7 @@ const KEY = d => 'tarot:' + d;
 function load(d){ try{ return JSON.parse(localStorage.getItem(KEY(d))) }catch(e){ return null } }
 function save(){ try{ localStorage.setItem(KEY(state.date), JSON.stringify(state)) }catch(e){} }
 
-let state, busy = false;
+let state, busy = false, lastRowStart = 0;
 const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = ms => new Promise(r => setTimeout(r, calm ? 0 : ms));
 function fresh(){
@@ -193,6 +193,7 @@ function layoutDeck(){
   const cw = W < 560 ? 40 : W < 900 ? 52 : 60, ch = cw * 600 / 350;
   const per = Math.ceil(78 / rows), lift = rows === 1 ? 46 : 26, rowH = ch + lift * .5 + 22;
   const H = Math.max(rows * rowH + 20, ch * 1.6 + 40), stacked = deck.classList.contains('stack');
+  lastRowStart = (rows - 1) * per;
   deck.style.width = W + 'px'; deck.style.height = H + 'px';
   deck.style.setProperty('--cw', cw + 'px');
   [...deck.children].forEach((el, i) => {
@@ -294,8 +295,9 @@ async function pick(i){
 async function drawBottom(){
   if (busy) return;
   const used = taken();
-  let i = state.deck.length - 1;
-  while (used.has(state.deck[i].id)) i--;          // 牌堆最下面、還沒被選走的那張
+  // 畫面上最底下一排、最左邊、還沒被選走的那張（電腦只有一排，就是最左邊那張）
+  const order = [...state.deck.keys()].slice(lastRowStart).concat([...state.deck.keys()].slice(0, lastRowStart));
+  const i = order.find(k => !used.has(state.deck[k].id));
   busy = true; refresh();
   const el = $('deck').children[i];
   el.style.top = 'calc(var(--y) + 30px)';          // 先從牌堆底部抽出來一點
