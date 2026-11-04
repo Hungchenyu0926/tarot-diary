@@ -335,9 +335,9 @@ $('modeAsk').addEventListener('input', e => {
 function setMode(m){
   if (busy) return;
   document.querySelectorAll('.modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
-  $('modeDiary').hidden = m !== 'diary'; $('modeAsk').hidden = m !== 'ask';
+  $('modeDiary').hidden = m !== 'diary'; $('modeAsk').hidden = m !== 'ask'; $('modeStudy').hidden = m !== 'study';
   try { localStorage.setItem('mode', m); } catch(e){}
-  m === 'diary' ? layoutDeck() : askLayout();
+  if (m === 'diary') layoutDeck(); else if (m === 'ask') askLayout();
 }
 document.querySelectorAll('.modes button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 

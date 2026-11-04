@@ -80,6 +80,24 @@ button:disabled{opacity:.4;cursor:default}
 .pile.wait .deck .card,.pile.done .deck .card{pointer-events:none}
 .pile.now .plbl{text-shadow:0 0 12px rgba(241,217,160,.7)}
 .spread.ask3{grid-template-columns:repeat(3,1fr)}
+
+/* 78 張牌義 */
+#studySel{max-width:100%;min-width:260px}
+#studyCard{max-width:780px;margin:12px auto 0}
+.study-top{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.study-top img{width:150px;border-radius:8px;display:block;transition:transform .5s}
+.study-top img.rev{transform:rotate(180deg)}
+.study-top h2{margin:0 0 4px;color:var(--gold2);font-size:1.4rem}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 16px;margin:10px 0}
+.sec summary{font-size:1rem}
+table.kv{width:100%;border-collapse:collapse;font-size:.92rem;margin-top:8px}
+table.kv th{width:6.5em;text-align:left;vertical-align:top;color:var(--muted);font-weight:400;padding:6px 8px 6px 0;white-space:nowrap}
+table.kv td{padding:6px 0;border-bottom:1px solid var(--line);line-height:1.7}
+@media (max-width:640px){
+  .study-top{grid-template-columns:100px 1fr;gap:12px;padding:12px}
+  .study-top img{width:100px}
+  table.kv th{width:5em}
+}
 .deck .card:hover,.deck .card:focus-visible{outline:none;z-index:200!important;top:calc(var(--y) - 14px)!important}
 .deck .card.gone{opacity:0;pointer-events:none}
 .deck.locked .card{cursor:default}
@@ -133,7 +151,7 @@ textarea::placeholder{color:var(--muted);opacity:.6}
     <h1>塔羅日記</h1>
     <div class="date" id="date"></div>
     <nav class="modes" aria-label="模式">
-      <button data-mode="diary" class="on">身心靈日記</button><button data-mode="ask">天地人問事</button>
+      <button data-mode="diary" class="on">身心靈日記</button><button data-mode="ask">天地人問事</button><button data-mode="study">78 張牌義</button>
     </nav>
   </header>
 
@@ -193,6 +211,19 @@ textarea::placeholder{color:var(--muted);opacity:.6}
     </div>
     <div class="status" id="askMsg"></div>
   </section>
+</section>
+
+<section id="modeStudy" hidden>
+  <div class="toolbar">
+    <select id="studySel" aria-label="選一張牌"></select>
+  </div>
+  <div class="toolbar">
+    <button id="studyPrev">‹ 上一張</button>
+    <button id="studyRand" class="primary">🎲 隨機</button>
+    <button id="studyFlip">正／逆</button>
+    <button id="studyNext">下一張 ›</button>
+  </div>
+  <div id="studyCard"></div>
 </section>
 
   <div class="foot">牌面：Rider-Waite-Smith 1909 原版（Pamela Colman Smith，公有領域），掃描檔取自
@@ -670,5 +701,7 @@ let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() 
 start(load(today) || fresh());
 </script>
 <script src="ask.js"></script>
+<script src="mynotes.js" onerror="this.remove()"></script>
+<script src="study.js"></script>
 </body>
 </html>
