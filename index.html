@@ -103,6 +103,7 @@ details tr.hit td{background:rgba(216,180,106,.12)}
 textarea{width:100%;min-height:72px;font:inherit;font-size:.95rem;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
 textarea:focus{outline:none;border-color:var(--gold)}
 .note-lbl{font-size:.85rem;color:var(--muted);margin-top:8px}
+.body-map{font-size:.85rem;color:var(--gold2);margin-top:4px;line-height:1.6}
 .guide{background:linear-gradient(180deg,#2a2552,var(--panel));border:1px solid var(--gold);border-radius:12px;padding:16px 20px}
 .guide h2{margin:0 0 8px;color:var(--gold2);font-size:1.25rem}
 .guide p{margin:.5em 0}
@@ -397,6 +398,31 @@ const posOf = i => `「${POS[i].name}」`;
 const ori = p => p.rev ? 'rev' : 'up';
 const isCourt = c => c.arcana === 'minor' && c.num > 10;
 
+// 人體能量全息圖（Body Map）：花色對應身體部位，宮廷牌是鏡子；大牌不適用
+const BODY = {
+  swords:    {part: '大腦',      en: 'Head',        q: '我在想什麼？',   note: '溝通與理智'},
+  cups:      {part: '心臟',      en: 'Heart',       q: '我的感覺如何？', note: '情緒流動'},
+  wands:     {part: '手腳',      en: 'Limbs',       q: '我正在做什麼？', note: '動力與行動'},
+  pentacles: {part: '皮膚／口袋', en: 'Skin/Pocket', q: '我摸到了什麼？', note: '物質與回饋'},
+};
+const MIRROR = '宮廷牌＝鏡子（Mirror）：我現在看起來是什麼樣子？（角色扮演）';
+function bodyMap(c){
+  if (c.arcana !== 'minor') return [];
+  const b = BODY[c.suit];
+  return [...(isCourt(c) ? [MIRROR] : []), `${c.name.slice(0, 2)}（${c.element}）＝${b.part}（${b.en}）：${b.q}（${b.note}）`];
+}
+const bodyHtml = c => bodyMap(c).map(t => `<div class="body-map">🫀 ${t}</div>`).join('');
+const bodyMd = c => bodyMap(c).map(t => `- **人體能量圖**：${t}\n`).join('');
+// 整體指引用：列出哪些部位被點亮
+function bodySummary(cs, labels){
+  const lit = cs.map((c, i) => c.arcana === 'minor' ? `${labels[i]}的${BODY[c.suit].part}` : null).filter(Boolean);
+  if (!lit.length) return '';
+  const parts = [...new Set(cs.filter(c => c.arcana === 'minor').map(c => BODY[c.suit].part))];
+  const qs = parts.map(p => Object.values(BODY).find(b => b.part === p).q).join('');
+  return `人體能量圖：這次亮起來的是${lit.join('、')}，可以問問自己：${qs}` +
+    (cs.some(isCourt) ? '宮廷牌是一面鏡子，也想想：我現在看起來是什麼樣子？' : '');
+}
+
 function synth(picks, bottom){
   const cs = picks.map(p => BY_ID[p.id]), out = [];
   // 1. 大牌比重
@@ -435,6 +461,8 @@ function synth(picks, bottom){
   if (dup) out.push(`有兩張以上都是數字 ${dup}，同一個階段的功課正在不同層面同時出現。`);
   const courts = cs.map((c, i) => isCourt(c) ? i : -1).filter(i => i >= 0);
   if (courts.length) out.push(`宮廷牌${courts.map(i => `「${cs[i].name}」`).join('、')}代表一種角色：可能是身邊的某個人，也可能是今天你可以練習扮演的態度。`);
+  const bm = bottom ? bodySummary([...cs, BY_ID[bottom.id]], ['身', '心', '靈', '底牌']) : bodySummary(cs, ['身', '心', '靈']);
+  if (bm) out.push(bm);
   // 5. 底牌
   let tail = '';
   if (bottom){
@@ -456,7 +484,7 @@ function cardBlock(p, label, field, noteKey){
     <td>${c[k][field]}</td></tr>`;
   return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
     <div><h3>${label}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
-    <div class="kw">${c.en}・${c.element}元素</div>
+    <div class="kw">${c.en}・${c.element}元素</div>${bodyHtml(c)}
     <div class="note-lbl">先寫下你自己看到什麼（練習）</div>
     <textarea data-note="${noteKey}" placeholder="畫面裡的人物、顏色、動作讓你想到什麼？">${esc(state.notes[noteKey])}</textarea>
     <details><summary>看牌義（正位／逆位對照）</summary>
@@ -488,7 +516,7 @@ const mdFile = () => `${state.date}-${mdTitle()}.md`;
 function markdown(){
   const line = (name, p, field, note) => {
     const c = BY_ID[p.id];
-    return `## ${name}：${c.name}（${p.rev ? '逆位' : '正位'}）\n\n- **關鍵詞**：${c[ori(p)].kw}\n- **牌義**：${c[ori(p)][field]}\n` +
+    return `## ${name}：${c.name}（${p.rev ? '逆位' : '正位'}）\n\n- **關鍵詞**：${c[ori(p)].kw}\n${bodyMd(c)}- **牌義**：${c[ori(p)][field]}\n` +
       `- 正位對照：${c.up.kw}｜${c.up[field]}\n- 逆位對照：${c.rev.kw}｜${c.rev[field]}\n- **我的解讀**：${state.notes[note] || ''}\n`;
   };
   const s = synth(state.picks, state.bottom), all = [...state.picks, state.bottom];

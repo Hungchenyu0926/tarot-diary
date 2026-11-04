@@ -4,6 +4,7 @@
 //   人＝宮廷牌 16 張＝駕駛員（Who）：當事人的性格、態度，技術好壞影響結果
 //   地＝數字牌 40 張＝車子／當下路程（What）：具體事件、物質實相、現狀
 // 影響力：天 > 人 > 地。比喻文字為本專案自寫。
+// 人體能量全息圖（BODY、bodyHtml、bodyMd）定義在 index.html，兩種模式共用。
 
 const ASK_POS = [
   {key: 'sky',   name: '天', role: '天氣／路況廣播', q: 'Why',  hint: '大環境・不可抗力', field: 'core'},
@@ -250,7 +251,7 @@ function askBlock(pos){
     <td>${c[rev ? 'rev' : 'up'].kw}｜${c[rev ? 'rev' : 'up'][f]}</td></tr>`;
   return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
     <div><h3>${pos.name}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
-    <div class="kw">${pos.role}（${pos.q}）・${c.en}・${c.element}元素</div>
+    <div class="kw">${pos.role}（${pos.q}）・${c.en}・${c.element}元素</div>${bodyHtml(c)}
     <div class="note-lbl">先寫下你自己看到什麼（練習）</div>
     <textarea data-ask-note="${pos.key}" placeholder="這張牌放在「${pos.role}」的位置，讓你想到什麼？">${esc(ask.notes[pos.key])}</textarea>
     <details><summary>看牌義（正位／逆位對照）</summary>
@@ -270,6 +271,11 @@ function askSynth(){
   out.push(`天與人：${relate(S.element, M.element)}。`);
   // 地：路程
   out.push(`<b>地（What）</b>眼前路況是「${ride(earth)}」。${stage(E.num)}，落在${SUIT_AREA[E.suit]}的層面。${E[ori(earth)].core}`);
+  // 人體能量全息圖：人是鏡子，地是身體部位
+  const bm = BODY[M.suit], be = BODY[E.suit];
+  out.push(`<b>人體能量圖</b>人（${M.name}）是一面鏡子，照出你在這件事裡扮演的角色：「我現在看起來是什麼樣子？」它屬於${bm.part}，問問自己「${bm.q}」` +
+    `地（${E.name}）落在${be.part}，問問自己「${be.q}」` +
+    (M.suit === E.suit ? `人和地落在同一個部位，這件事的關鍵就在${be.part}（${be.note}）。` : ''));
   // 天 × 地
   out.push(ts > 0 && te > 0 ? '天時和路況都好，這是推進的好時機，放心踩油門。'
     : ts > 0 && te < 0 ? '大環境其實有利，眼前的卡關只是暫時的路況，駕駛方式調整好就過得去。'
@@ -305,7 +311,7 @@ function askMarkdown(){
     ASK_POS.map(p => { const k = ask.picks[p.key];
       return `| ${p.name} | ${p.role}（${p.q}） | ${BY_ID[k.id].name} | ${k.rev ? '逆位' : '正位'} | ${ride(k)} |`; }).join('\n') + '\n\n---\n\n' +
     ASK_POS.map(p => { const k = ask.picks[p.key], c = BY_ID[k.id];
-      return `## ${p.name}・${p.role}：${c.name}（${k.rev ? '逆位' : '正位'}）\n\n- **比喻**：${ride(k)}\n- **關鍵詞**：${c[ori(k)].kw}\n- **牌義**：${c[ori(k)][p.field]}\n` +
+      return `## ${p.name}・${p.role}：${c.name}（${k.rev ? '逆位' : '正位'}）\n\n- **比喻**：${ride(k)}\n- **關鍵詞**：${c[ori(k)].kw}\n${bodyMd(c)}- **牌義**：${c[ori(k)][p.field]}\n` +
         `- 正位對照：${RIDE[c.id][0]}｜${c.up.kw}\n- 逆位對照：${RIDE[c.id][1]}｜${c.rev.kw}\n- **我的解讀**：${ask.notes[p.key] || ''}\n`; }).join('\n') +
     `\n---\n\n## 🔮 天地人整體解牌\n\n${s.paras.map(plain).join('\n\n')}\n\n> ${s.focus}\n\n## 📓 我的結論\n\n${ask.notes.overall || ''}\n`;
 }
