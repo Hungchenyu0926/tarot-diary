@@ -115,6 +115,7 @@ textarea:focus{outline:none;border-color:var(--gold)}
     <button id="btnShuffle">重新洗牌</button>
     <button id="btnBottom" class="primary" disabled>抽出底牌</button>
     <button id="btnReveal" class="primary">翻開四張牌</button>
+    <button id="btnRedraw">↻ 重新抽牌</button>
     <select id="history" aria-label="歷史紀錄"></select>
   </div>
   <div class="status" id="status"></div>
@@ -132,7 +133,7 @@ textarea:focus{outline:none;border-color:var(--gold)}
     <div class="toolbar">
       <button id="btnExport" class="primary">存到 HUNG_NOTE 每日紀錄</button>
       <button id="btnCopy">複製 Markdown</button>
-      <button id="btnRestart">今天重抽</button>
+      <button id="btnRestart">↻ 重新抽牌</button>
     </div>
     <div class="status" id="saveMsg"></div>
   </section>
@@ -268,7 +269,9 @@ function refresh(){
   $('btnShuffle').textContent = on ? '重新洗牌' : '洗牌';
   $('btnShuffle').classList.toggle('primary', !on);
   $('btnShuffle').disabled = busy || n > 0;
-  $('btnShuffle').hidden = !!state.bottom;
+  $('btnShuffle').hidden = n > 0 || !!state.bottom;
+  $('btnRedraw').hidden = !(n > 0 || state.bottom) || state.date !== today;   // 抽過牌才出現；回顧舊日期時不顯示
+  $('btnRedraw').disabled = busy;
   $('btnBottom').hidden = !on || !!state.bottom;
   $('btnBottom').disabled = busy || n < 3;
   $('btnReveal').hidden = !state.bottom || state.revealed;
@@ -517,9 +520,12 @@ $('btnBottom').onclick = drawBottom;
 $('btnReveal').onclick = reveal;
 $('btnExport').onclick = saveMd;
 $('btnCopy').onclick = copyMd;
-$('btnRestart').onclick = () => {
-  if (confirm('確定要重抽今天的牌嗎？今天寫的筆記會被清空。')) { start(fresh()); save(); scrollTo({top: 0}); }
-};
+// 重新抽牌：清掉今天的牌與筆記，直接重新洗牌
+function redraw(){
+  if (busy || !confirm('確定要重新抽牌嗎？今天已抽的牌和寫的筆記都會清空。')) return;
+  scrollTo({top: 0}); shuffle();
+}
+$('btnRedraw').onclick = $('btnRestart').onclick = redraw;
 $('history').onchange = e => start(load(e.target.value) || fresh());
 document.addEventListener('input', e => {
   const k = e.target.dataset.note || (e.target.id === 'overall' && 'overall');
