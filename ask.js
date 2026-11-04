@@ -106,8 +106,8 @@ const RANK = {
   13: '你用照顧與包容的方式在開車，記得也顧好自己。',
   14: '你握有主導權，能做決定，但要留意別太固執。',
 };
-const stage = n => n <= 3 ? '事情還在起步階段' : n <= 6 ? '事情走到中段，正在調整、求穩定'
-  : n <= 9 ? '事情進入考驗期，也離收穫不遠' : '事情走到一個段落的終點，準備進入新的循環';
+// 數字生命週期（NUM、phase）定義在 index.html
+const stage = n => `數字 ${n} 是「${NUM[n][0]}」，屬於${phase(n)}：${NUM[n][1]}`;
 
 // ---- 狀態（只保留目前這一問；存檔後寫進 HUNG_NOTE） ----
 let ask;
@@ -251,7 +251,7 @@ function askBlock(pos){
     <td>${c[rev ? 'rev' : 'up'].kw}｜${c[rev ? 'rev' : 'up'][f]}</td></tr>`;
   return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
     <div><h3>${pos.name}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
-    <div class="kw">${pos.role}（${pos.q}）・${c.en}・${c.element}元素</div>${bodyHtml(c)}
+    <div class="kw">${pos.role}（${pos.q}）・${c.en}・${c.element}元素</div>${numHtml(c)}${bodyHtml(c)}
     <div class="note-lbl">先寫下你自己看到什麼（練習）</div>
     <textarea data-ask-note="${pos.key}" placeholder="這張牌放在「${pos.role}」的位置，讓你想到什麼？">${esc(ask.notes[pos.key])}</textarea>
     <details><summary>看牌義（正位／逆位對照）</summary>
@@ -311,7 +311,7 @@ function askMarkdown(){
     ASK_POS.map(p => { const k = ask.picks[p.key];
       return `| ${p.name} | ${p.role}（${p.q}） | ${BY_ID[k.id].name} | ${k.rev ? '逆位' : '正位'} | ${ride(k)} |`; }).join('\n') + '\n\n---\n\n' +
     ASK_POS.map(p => { const k = ask.picks[p.key], c = BY_ID[k.id];
-      return `## ${p.name}・${p.role}：${c.name}（${k.rev ? '逆位' : '正位'}）\n\n- **比喻**：${ride(k)}\n- **關鍵詞**：${c[ori(k)].kw}\n${bodyMd(c)}- **牌義**：${c[ori(k)][p.field]}\n` +
+      return `## ${p.name}・${p.role}：${c.name}（${k.rev ? '逆位' : '正位'}）\n\n- **比喻**：${ride(k)}\n- **關鍵詞**：${c[ori(k)].kw}\n${numMd(c)}${bodyMd(c)}- **牌義**：${c[ori(k)][p.field]}\n` +
         `- 正位對照：${RIDE[c.id][0]}｜${c.up.kw}\n- 逆位對照：${RIDE[c.id][1]}｜${c.rev.kw}\n- **我的解讀**：${ask.notes[p.key] || ''}\n`; }).join('\n') +
     `\n---\n\n## 🔮 天地人整體解牌\n\n${s.paras.map(plain).join('\n\n')}\n\n> ${s.focus}\n\n## 📓 我的結論\n\n${ask.notes.overall || ''}\n`;
 }

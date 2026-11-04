@@ -413,6 +413,25 @@ function bodyMap(c){
 }
 const bodyHtml = c => bodyMap(c).map(t => `<div class="body-map">🫀 ${t}</div>`).join('');
 const bodyMd = c => bodyMap(c).map(t => `- **人體能量圖**：${t}\n`).join('');
+// 數字不是數學，是能量的「生命週期」：只用在數字牌（Ace＝1 到 10）
+const NUM = {
+  1:  ['起點',       '種子發芽，新的開始，潛能剛冒出頭'],
+  2:  ['平衡',       '站在天秤前，面對選擇與兩端的拉扯'],
+  3:  ['合作',       '一起動手搭建，初步成果出現'],
+  4:  ['穩定',       '築起城堡、打好基礎，也要留意停滯'],
+  5:  ['中點／挑戰', '路面裂開，衝突與失衡，是成長的轉折點'],
+  6:  ['修復',       '伸出手給予與接受，重新回到和諧'],
+  7:  ['觀察',       '拿起望遠鏡評估、反思，看清方向'],
+  8:  ['努力',       '推著石頭前進，專注精進'],
+  9:  ['將成',       '快要登頂，成果在望，也需要獨自沉澱'],
+  10: ['終點／轉化', '走到一個循環的盡頭，打開通往新循環的門'],
+};
+const phase = n => n <= 3 ? '萌芽期' : n <= 6 ? '成長期' : n <= 9 ? '成熟期' : '完成與轉化';
+const numText = c => c.arcana === 'minor' && !isCourt(c)
+  ? `數字 ${c.num}（${NUM[c.num][0]}）・${phase(c.num)}：${NUM[c.num][1]}` : '';
+const numHtml = c => numText(c) && `<div class="body-map">🔢 ${numText(c)}</div>`;
+const numMd = c => numText(c) && `- **數字週期**：${numText(c)}\n`;
+
 // 整體指引用：列出哪些部位被點亮
 function bodySummary(cs, labels){
   const lit = cs.map((c, i) => c.arcana === 'minor' ? `${labels[i]}的${BODY[c.suit].part}` : null).filter(Boolean);
@@ -459,6 +478,9 @@ function synth(picks, bottom){
   const minorNums = cs.filter(c => c.arcana === 'minor' && !isCourt(c)).map(c => c.num);
   const dup = minorNums.find((n, i) => minorNums.indexOf(n) !== i);
   if (dup) out.push(`有兩張以上都是數字 ${dup}，同一個階段的功課正在不同層面同時出現。`);
+  const cyc = cs.map((c, i) => numText(c) ? `${POS[i].name}在 ${c.num}（${NUM[c.num][0]}・${phase(c.num)}）` : null).filter(Boolean);
+  if (cyc.length) out.push(`數字生命週期：${cyc.join('、')}。` +
+    (cs.some(c => c.num === 5 && numText(c)) ? '出現 5，代表正走到中點的挑戰，卡關是成長的一部分。' : ''));
   const courts = cs.map((c, i) => isCourt(c) ? i : -1).filter(i => i >= 0);
   if (courts.length) out.push(`宮廷牌${courts.map(i => `「${cs[i].name}」`).join('、')}代表一種角色：可能是身邊的某個人，也可能是今天你可以練習扮演的態度。`);
   const bm = bottom ? bodySummary([...cs, BY_ID[bottom.id]], ['身', '心', '靈', '底牌']) : bodySummary(cs, ['身', '心', '靈']);
@@ -484,7 +506,7 @@ function cardBlock(p, label, field, noteKey){
     <td>${c[k][field]}</td></tr>`;
   return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
     <div><h3>${label}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
-    <div class="kw">${c.en}・${c.element}元素</div>${bodyHtml(c)}
+    <div class="kw">${c.en}・${c.element}元素</div>${numHtml(c)}${bodyHtml(c)}
     <div class="note-lbl">先寫下你自己看到什麼（練習）</div>
     <textarea data-note="${noteKey}" placeholder="畫面裡的人物、顏色、動作讓你想到什麼？">${esc(state.notes[noteKey])}</textarea>
     <details><summary>看牌義（正位／逆位對照）</summary>
@@ -516,7 +538,7 @@ const mdFile = () => `${state.date}-${mdTitle()}.md`;
 function markdown(){
   const line = (name, p, field, note) => {
     const c = BY_ID[p.id];
-    return `## ${name}：${c.name}（${p.rev ? '逆位' : '正位'}）\n\n- **關鍵詞**：${c[ori(p)].kw}\n${bodyMd(c)}- **牌義**：${c[ori(p)][field]}\n` +
+    return `## ${name}：${c.name}（${p.rev ? '逆位' : '正位'}）\n\n- **關鍵詞**：${c[ori(p)].kw}\n${numMd(c)}${bodyMd(c)}- **牌義**：${c[ori(p)][field]}\n` +
       `- 正位對照：${c.up.kw}｜${c.up[field]}\n- 逆位對照：${c.rev.kw}｜${c.rev[field]}\n- **我的解讀**：${state.notes[note] || ''}\n`;
   };
   const s = synth(state.picks, state.bottom), all = [...state.picks, state.bottom];
