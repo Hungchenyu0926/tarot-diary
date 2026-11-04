@@ -252,8 +252,8 @@ function askBlock(pos){
   return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
     <div><h3>${pos.name}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
     <div class="kw">${pos.role}（${pos.q}）・${c.en}・${c.element}元素</div>${numHtml(c)}${bodyHtml(c)}
-    <div class="note-lbl">先寫下你自己看到什麼（練習）</div>
-    <textarea data-ask-note="${pos.key}" placeholder="這張牌放在「${pos.role}」的位置，讓你想到什麼？">${esc(ask.notes[pos.key])}</textarea>
+    ${storyHtml(c)}
+    <textarea data-ask-note="${pos.key}" placeholder="${storyHint(c)}（放在「${pos.role}」的位置）">${esc(ask.notes[pos.key])}</textarea>
     <details><summary>看牌義（正位／逆位對照）</summary>
       <p class="say"><b>${ride(p)}</b>：${c[ori(p)][f]}</p>
       <table><tr><th></th><th>${pos.role}</th><th>關鍵詞｜解讀</th></tr>${row(false, '正位')}${row(true, '逆位')}</table>
@@ -311,7 +311,7 @@ function askMarkdown(){
     ASK_POS.map(p => { const k = ask.picks[p.key];
       return `| ${p.name} | ${p.role}（${p.q}） | ${BY_ID[k.id].name} | ${k.rev ? '逆位' : '正位'} | ${ride(k)} |`; }).join('\n') + '\n\n---\n\n' +
     ASK_POS.map(p => { const k = ask.picks[p.key], c = BY_ID[k.id];
-      return `## ${p.name}・${p.role}：${c.name}（${k.rev ? '逆位' : '正位'}）\n\n- **比喻**：${ride(k)}\n- **關鍵詞**：${c[ori(k)].kw}\n${numMd(c)}${bodyMd(c)}- **牌義**：${c[ori(k)][p.field]}\n` +
+      return `## ${p.name}・${p.role}：${c.name}（${k.rev ? '逆位' : '正位'}）\n\n- **比喻**：${ride(k)}\n- **關鍵詞**：${c[ori(k)].kw}\n${numMd(c)}${bodyMd(c)}${storyMd(c)}- **牌義**：${c[ori(k)][p.field]}\n` +
         `- 正位對照：${RIDE[c.id][0]}｜${c.up.kw}\n- 逆位對照：${RIDE[c.id][1]}｜${c.rev.kw}\n- **我的解讀**：${ask.notes[p.key] || ''}\n`; }).join('\n') +
     `\n---\n\n## 🔮 天地人整體解牌\n\n${s.paras.map(plain).join('\n\n')}\n\n> ${s.focus}\n\n## 📓 我的結論\n\n${ask.notes.overall || ''}\n`;
 }

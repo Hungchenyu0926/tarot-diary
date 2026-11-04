@@ -102,8 +102,11 @@ details th{color:var(--muted);font-weight:400;white-space:nowrap}
 details tr.hit td{background:rgba(216,180,106,.12)}
 textarea{width:100%;min-height:72px;font:inherit;font-size:.95rem;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
 textarea:focus{outline:none;border-color:var(--gold)}
+textarea::placeholder{color:var(--muted);opacity:.6}
 .note-lbl{font-size:.85rem;color:var(--muted);margin-top:8px}
 .body-map{font-size:.85rem;color:var(--gold2);margin-top:4px;line-height:1.6}
+.story{font-size:.88rem;line-height:1.6}
+.story-btn{font-size:.78rem;padding:2px 10px;margin:4px 0 6px}
 .guide{background:linear-gradient(180deg,#2a2552,var(--panel));border:1px solid var(--gold);border-radius:12px;padding:16px 20px}
 .guide h2{margin:0 0 8px;color:var(--gold2);font-size:1.25rem}
 .guide p{margin:.5em 0}
@@ -432,6 +435,35 @@ const numText = c => c.arcana === 'minor' && !isCourt(c)
 const numHtml = c => numText(c) && `<div class="body-map">🔢 ${numText(c)}</div>`;
 const numMd = c => numText(c) && `- **數字週期**：${numText(c)}\n`;
 
+// 塔羅萬用解讀公式：不要背牌義，用翻譯說故事（翻譯＝MY STORY）
+const STORY = {
+  wands:     '關於行動，我發生了',
+  swords:    '關於想法，我正在思考／糾結',
+  cups:      '關於感受，我感到',
+  pentacles: '關於現實，我具體得到了／缺乏',
+};
+const RANK_NAME = {11: '侍者', 12: '騎士', 13: '皇后', 14: '國王'};
+function story(c){            // 回傳 {lines: 顯示的句型, start: 帶入練習欄的開頭}
+  if (c.arcana === 'major')   // 圖上沒有大牌，這句是本專案補的
+    return {lines: ['大牌：「這段時間的人生課題，我正在學習……」'], start: '這段時間的人生課題，我正在學習'};
+  const suit = `看到【${c.name.slice(0, 2)}】：「${STORY[c.suit]}……」`;
+  if (isCourt(c)) return {lines: [`看到【宮廷】：「在這件事上，我表現得像個${RANK_NAME[c.num]}……」`, suit],
+    start: `在這件事上，我表現得像個${RANK_NAME[c.num]}，`};
+  return {lines: [`${suit}（加上數字 ${c.num}「${NUM[c.num][0]}」和畫面的含義）`], start: STORY[c.suit].split('／')[0]};
+}
+const storyHtml = c => `<div class="note-lbl">✍️ 翻譯成我的故事（不要背牌義）</div>` +
+  story(c).lines.map(t => `<div class="story">${t}</div>`).join('') +
+  `<button type="button" class="story-btn" data-start="${story(c).start}">帶入句型</button>`;
+const storyHint = c => story(c).start.replace(/，$/, '') + '……';
+const storyMd = c => `- **翻譯句型**：${story(c).lines.join('／')}\n`;
+// 「帶入句型」：把開頭放進同一張牌的練習欄
+document.addEventListener('click', e => {
+  const b = e.target.closest('.story-btn'); if (!b) return;
+  const t = b.closest('.pos').querySelector('textarea');
+  t.value = t.value.trim() ? t.value.replace(/\s*$/, '\n') + b.dataset.start : b.dataset.start;
+  t.dispatchEvent(new Event('input', {bubbles: true})); t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+});
+
 // 整體指引用：列出哪些部位被點亮
 function bodySummary(cs, labels){
   const lit = cs.map((c, i) => c.arcana === 'minor' ? `${labels[i]}的${BODY[c.suit].part}` : null).filter(Boolean);
@@ -507,8 +539,8 @@ function cardBlock(p, label, field, noteKey){
   return `<div class="pos"><img src="cards/${c.id}.jpg" alt="${c.name}" class="${p.rev ? 'rev' : ''}">
     <div><h3>${label}｜${c.name}<span class="tag ${p.rev ? 'rev' : ''}">${p.rev ? '逆位' : '正位'}</span></h3>
     <div class="kw">${c.en}・${c.element}元素</div>${numHtml(c)}${bodyHtml(c)}
-    <div class="note-lbl">先寫下你自己看到什麼（練習）</div>
-    <textarea data-note="${noteKey}" placeholder="畫面裡的人物、顏色、動作讓你想到什麼？">${esc(state.notes[noteKey])}</textarea>
+    ${storyHtml(c)}
+    <textarea data-note="${noteKey}" placeholder="${storyHint(c)}">${esc(state.notes[noteKey])}</textarea>
     <details><summary>看牌義（正位／逆位對照）</summary>
       <p class="say">${o[field]}</p>
       <table><tr><th></th><th>關鍵詞</th><th>${field === 'core' ? '整體意思' : label + '的解讀'}</th></tr>
@@ -538,7 +570,7 @@ const mdFile = () => `${state.date}-${mdTitle()}.md`;
 function markdown(){
   const line = (name, p, field, note) => {
     const c = BY_ID[p.id];
-    return `## ${name}：${c.name}（${p.rev ? '逆位' : '正位'}）\n\n- **關鍵詞**：${c[ori(p)].kw}\n${numMd(c)}${bodyMd(c)}- **牌義**：${c[ori(p)][field]}\n` +
+    return `## ${name}：${c.name}（${p.rev ? '逆位' : '正位'}）\n\n- **關鍵詞**：${c[ori(p)].kw}\n${numMd(c)}${bodyMd(c)}${storyMd(c)}- **牌義**：${c[ori(p)][field]}\n` +
       `- 正位對照：${c.up.kw}｜${c.up[field]}\n- 逆位對照：${c.rev.kw}｜${c.rev[field]}\n- **我的解讀**：${state.notes[note] || ''}\n`;
   };
   const s = synth(state.picks, state.bottom), all = [...state.picks, state.bottom];
