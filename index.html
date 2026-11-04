@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>身心靈塔羅日記</title>
+<title>塔羅日記</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -61,6 +61,25 @@ button:disabled{opacity:.4;cursor:default}
 .fly{position:fixed;z-index:1000;border-radius:6px;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.6)}
 .flip.on .front{box-shadow:0 0 22px rgba(241,217,160,.45)}
 @media (prefers-reduced-motion:reduce){.deck .card,.flip{transition:none}}
+
+/* 模式切換 */
+.modes{display:inline-flex;margin-top:10px;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--bg2)}
+.modes button{border:0;border-radius:999px;background:none;padding:5px 16px;color:var(--muted)}
+.modes button.on{background:var(--gold);color:#1b1730;font-weight:500}
+
+/* 天地人問事 */
+.ask-q{max-width:720px;margin:6px auto 0}
+.ask-q label{display:block;font-family:"Noto Serif TC",serif;color:var(--gold2);margin-bottom:4px}
+.ask-q .model{font-size:.78rem;color:var(--muted);margin-top:6px;line-height:1.6}
+.pile{position:relative;margin:4px auto 0;text-align:center}
+.pile .plbl{font-family:"Noto Serif TC",serif;color:var(--gold2);font-size:.95rem}
+.pile .plbl small{color:var(--muted);font-family:inherit;font-size:.75rem;margin-left:6px}
+.pile .deck{margin:2px auto 6px}
+.pile.wait{opacity:.35}
+.pile.done .deck{opacity:.25}
+.pile.wait .deck .card,.pile.done .deck .card{pointer-events:none}
+.pile.now .plbl{text-shadow:0 0 12px rgba(241,217,160,.7)}
+.spread.ask3{grid-template-columns:repeat(3,1fr)}
 .deck .card:hover,.deck .card:focus-visible{outline:none;z-index:200!important;top:calc(var(--y) - 14px)!important}
 .deck .card.gone{opacity:0;pointer-events:none}
 .deck.locked .card{cursor:default}
@@ -107,10 +126,14 @@ textarea:focus{outline:none;border-color:var(--gold)}
 <body>
 <div class="wrap">
   <header>
-    <h1>身心靈塔羅日記</h1>
+    <h1>塔羅日記</h1>
     <div class="date" id="date"></div>
+    <nav class="modes" aria-label="模式">
+      <button data-mode="diary" class="on">身心靈日記</button><button data-mode="ask">天地人問事</button>
+    </nav>
   </header>
 
+<section id="modeDiary">
   <div class="toolbar">
     <button id="btnShuffle">重新洗牌</button>
     <button id="btnBottom" class="primary" disabled>抽出底牌</button>
@@ -137,6 +160,36 @@ textarea:focus{outline:none;border-color:var(--gold)}
     </div>
     <div class="status" id="saveMsg"></div>
   </section>
+</section>
+
+<section id="modeAsk" hidden>
+  <div class="ask-q">
+    <label for="askQ">想問的事</label>
+    <textarea id="askQ" placeholder="先把問題寫清楚，例如：我該接下這份新工作嗎？"></textarea>
+    <div class="model">天（大牌 22 張）＝天氣／路況廣播（Why）・人（宮廷牌 16 張）＝駕駛員（Who）・地（數字牌 40 張）＝車子／當下路程（What）</div>
+  </div>
+  <div class="toolbar">
+    <button id="askShuffle" class="primary">洗牌</button>
+    <button id="askReveal" class="primary" hidden>翻開三張牌</button>
+    <button id="askRedraw" hidden>↻ 重新問事</button>
+  </div>
+  <div class="status" id="askStatus"></div>
+  <div id="askPiles"></div>
+  <div class="spread ask3" id="askSpread"></div>
+  <section class="reading" id="askReading">
+    <div id="askPositions"></div>
+    <div class="guide" id="askGuide"></div>
+    <div class="pos" style="display:block">
+      <h3>我的結論</h3>
+      <textarea id="askOverall" placeholder="看完天、人、地，這件事你打算怎麼做？"></textarea>
+    </div>
+    <div class="toolbar">
+      <button id="askExport" class="primary">存到 HUNG_NOTE 每日紀錄</button>
+      <button id="askCopy">複製 Markdown</button>
+    </div>
+    <div class="status" id="askMsg"></div>
+  </section>
+</section>
 
   <div class="foot">牌面：Rider-Waite-Smith 1909 原版（Pamela Colman Smith，公有領域），掃描檔取自
     <a href="https://github.com/metabismuth/tarot-json">metabismuth/tarot-json</a>（MIT）。<br>寫到一半的筆記會先暫存在這台裝置的瀏覽器裡；按「存到 HUNG_NOTE 每日紀錄」才會寫進知識庫。</div>
@@ -244,8 +297,8 @@ async function shuffle(){
 }
 
 // 被選中的牌從牌扇飛進牌位（仍是背面）
-function fly(el, i){
-  const a = el.getBoundingClientRect(), b = slotEl(i).querySelector('.place').getBoundingClientRect();
+function fly(el, place){
+  const a = el.getBoundingClientRect(), b = place.getBoundingClientRect();
   const w = el.offsetWidth, h = el.offsetHeight, ax = a.left + a.width / 2, ay = a.top + a.height / 2;
   const dx = b.left + b.width / 2 - ax, dy = b.top + b.height / 2 - ay, s = b.width / w;
   const c = document.createElement('div'); c.className = 'back fly';
@@ -289,7 +342,7 @@ async function pick(i){
   const d = state.deck[i], el = $('deck').children[i];
   if (taken().has(d.id)) return;
   busy = true;
-  const flight = fly(el, state.picks.length);
+  const flight = fly(el, slotEl(state.picks.length).querySelector('.place'));
   state.picks.push(d); save(); refresh();
   await flight;
   fillSlot(state.picks.length - 1, d);
@@ -305,7 +358,7 @@ async function drawBottom(){
   const el = $('deck').children[i];
   el.style.top = 'calc(var(--y) + 30px)';          // 先從牌堆底部抽出來一點
   await wait(400);
-  const flight = fly(el, 3);
+  const flight = fly(el, slotEl(3).querySelector('.place'));
   state.bottom = state.deck[i]; save();
   el.classList.add('gone');
   await flight;
@@ -465,14 +518,13 @@ async function folder(){
   await idb('readwrite', s => s.put(h, 'dir')).catch(() => {});
   return h;
 }
-function flash(msg){ $('saveMsg').textContent = msg; }
-async function saveMd(){
-  const name = mdFile(), file = new File([markdown()], name, {type: 'text/markdown'});
+// 兩種模式共用：存檔、複製
+async function saveFile(name, text, msgId){
+  const file = new File([text], name, {type: 'text/markdown'}), flash = msg => $(msgId).textContent = msg;
   try {
     if (window.showDirectoryPicker){
       const dir = await folder(), fh = await dir.getFileHandle(name, {create: true}), w = await fh.createWritable();
       await w.write(file); await w.close();
-      state.saved = name; save();
       return flash(`已存到「${dir.name}」：${name}`);
     }
     if (navigator.canShare && navigator.canShare({files: [file]})){
@@ -485,10 +537,10 @@ async function saveMd(){
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   flash(`已下載 ${name}，請移到 HUNG_NOTE／30.每日紀錄`);
 }
-async function copyMd(){
-  try { await navigator.clipboard.writeText(markdown()); $('btnCopy').textContent = '已複製 ✓'; }
-  catch(e){ $('btnCopy').textContent = '複製失敗，請改用匯出'; }
-  setTimeout(() => $('btnCopy').textContent = '複製 Markdown', 2000);
+async function copyText(text, btn){
+  try { await navigator.clipboard.writeText(text); btn.textContent = '已複製 ✓'; }
+  catch(e){ btn.textContent = '複製失敗，請改用存檔'; }
+  setTimeout(() => btn.textContent = '複製 Markdown', 2000);
 }
 
 // ---- 歷史 ----
@@ -518,8 +570,8 @@ $('deck').addEventListener('keydown', e => { const el = e.target.closest('.card'
 $('btnShuffle').onclick = shuffle;
 $('btnBottom').onclick = drawBottom;
 $('btnReveal').onclick = reveal;
-$('btnExport').onclick = saveMd;
-$('btnCopy').onclick = copyMd;
+$('btnExport').onclick = () => saveFile(mdFile(), markdown(), 'saveMsg');
+$('btnCopy').onclick = e => copyText(markdown(), e.target);
 // 重新抽牌：清掉今天的牌與筆記，直接重新洗牌
 function redraw(){
   if (busy || !confirm('確定要重新抽牌嗎？今天已抽的牌和寫的筆記都會清空。')) return;
@@ -531,9 +583,10 @@ document.addEventListener('input', e => {
   const k = e.target.dataset.note || (e.target.id === 'overall' && 'overall');
   if (k){ state.notes[k] = e.target.value; save(); }
 });
-let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layoutDeck, 120); });
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { layoutDeck(); askLayout(); }, 120); });
 
 start(load(today) || fresh());
 </script>
+<script src="ask.js"></script>
 </body>
 </html>
